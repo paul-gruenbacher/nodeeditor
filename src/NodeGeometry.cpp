@@ -1,15 +1,16 @@
 #include "NodeGeometry.hpp"
 
-#include <iostream>
-#include <cmath>
-
 #include "PortType.hpp"
 #include "NodeState.hpp"
 #include "NodeDataModel.hpp"
 #include "Node.hpp"
 #include "NodeGraphicsObject.hpp"
-
 #include "StyleCollection.hpp"
+
+#include <QtGlobal>
+
+#include <iostream>
+#include <cmath>
 
 using QtNodes::NodeGeometry;
 using QtNodes::NodeDataModel;
@@ -241,19 +242,37 @@ widgetPosition() const
 {
   if (auto w = _dataModel->embeddedWidget())
   {
-    if (_dataModel->validationState() != NodeValidationState::Valid)
+    if (w->sizePolicy().verticalPolicy() & QSizePolicy::ExpandFlag)
     {
-      return QPointF(_spacing + portWidth(PortType::In),
-                     (captionHeight() + _height - validationHeight() - _spacing - w->height()) / 2.0);
+      // If the widget wants to use as much vertical space as possible, place it immediately after the caption.
+      return QPointF(_spacing + portWidth(PortType::In), captionHeight());
     }
+    else
+    {
+      if (_dataModel->validationState() != NodeValidationState::Valid)
+      {
+        return QPointF(_spacing + portWidth(PortType::In),
+                      (captionHeight() + _height - validationHeight() - _spacing - w->height()) / 2.0);
+      }
 
-    return QPointF(_spacing + portWidth(PortType::In),
-                   (captionHeight() + _height - w->height()) / 2.0);
+      return QPointF(_spacing + portWidth(PortType::In), 
+                    (captionHeight() + _height - w->height()) / 2.0);
+    }
   }
-
   return QPointF();
 }
 
+int
+NodeGeometry::
+equivalentWidgetHeight() const
+{
+  if (_dataModel->validationState() != NodeValidationState::Valid)
+  {
+    return height() - captionHeight() + validationHeight();
+  }
+
+  return height() - captionHeight();
+}
 
 unsigned int
 NodeGeometry::
@@ -338,8 +357,13 @@ portWidth(PortType portType) const
       name = _dataModel->dataType(portType, i).name;
     }
 
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    width = std::max(unsigned(_fontMetrics.horizontalAdvance(name)),
+                     width);
+#else
     width = std::max(unsigned(_fontMetrics.width(name)),
                      width);
+#endif
   }
 
   return width;

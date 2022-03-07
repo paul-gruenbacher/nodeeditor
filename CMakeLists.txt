@@ -1,23 +1,66 @@
-cmake_minimum_required(VERSION 3.2)
-# version 3.4 is required as other do not work with C++14 and clang
+cmake_minimum_required(VERSION 3.8)
 
 project(NodeEditor CXX)
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 set(CMAKE_DISABLE_SOURCE_CHANGES  ON)
+set(OpenGL_GL_PREFERENCE LEGACY)
 
-include(CTest)
+get_directory_property(_has_parent PARENT_DIRECTORY)
+if(_has_parent)
+  set(is_root_project OFF)
+else()
+  set(is_root_project ON)
+endif()
 
-option(BUILD_EXAMPLES "Build Examples" ON)
+set(NE_DEVELOPER_DEFAULTS "${is_root_project}" CACHE BOOL "Turns on default settings for development of NodeEditor")
+
+option(BUILD_TESTING "Build tests" "${NE_DEVELOPER_DEFAULTS}")
+option(BUILD_EXAMPLES "Build Examples" "${NE_DEVELOPER_DEFAULTS}")
+option(BUILD_SHARED_LIBS "Build as shared library" ON)
+option(BUILD_DEBUG_POSTFIX_D "Append d suffix to debug libraries" OFF)
+option(NE_FORCE_TEST_COLOR "Force colorized unit test output" OFF)
+
+enable_testing()
+
+if(NE_DEVELOPER_DEFAULTS)
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/bin")
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}/lib")
+endif()
+
+if(BUILD_DEBUG_POSTFIX_D)
+  set(CMAKE_DEBUG_POSTFIX d)
+endif()
+
+add_subdirectory(external)
+
 
 # Find the QtWidgets library
-find_package(Qt5 COMPONENTS
-             Core
-             Widgets
-             Gui
-             OpenGL)
+find_package(Qt6
+  COMPONENTS
+   Core
+   Widgets
+   Gui
+   OpenGL
+)
 
-qt5_add_resources(RESOURCES ./resources/resources.qrc)
+if (NOT Qt6_FOUND)
+  find_package(Qt5 5.13
+    COMPONENTS
+     Core
+     Widgets
+     Gui
+     OpenGL
+  )
+endif()
+
+if (NOT (Qt6_FOUND OR Qt5_FOUND))
+  message(FATAL_ERRROR "Qt libraries were not found.")
+endif()
+
+
+qt_add_resources(RESOURCES ./resources/resources.qrc)
 
 # Unfortunately, as we have a split include/src, AUTOMOC doesn't work.
 # We'll have to manually specify some files
@@ -48,16 +91,15 @@ set(CPP_SOURCE_FILES
 )
 
 # If we want to give the option to build a static library,
-# leave off SHARED here and use BUILD_SHARED_LIBS to
-# choose whether to add -D NODE_EDITOR_SHARED
-add_library(nodes SHARED
+# set BUILD_SHARED_LIBS option to OFF
+add_library(nodes
   ${CPP_SOURCE_FILES}
   ${RESOURCES}
 )
 add_library(NodeEditor::nodes ALIAS nodes)
 
 target_include_directories(nodes
-  PUBLIC 
+  PUBLIC
     $<INSTALL_INTERFACE:include>
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   PRIVATE
@@ -67,32 +109,38 @@ target_include_directories(nodes
 
 target_link_libraries(nodes
   PUBLIC
-    Qt5::Core
-    Qt5::Widgets
-    Qt5::Gui
-    Qt5::OpenGL
+    Qt::Core
+    Qt::Widgets
+    Qt::Gui
+    Qt::OpenGL
 )
 
 target_compile_definitions(nodes
   PUBLIC
-    ${Qt5Widgets_DEFINITIONS}
     NODE_EDITOR_SHARED
   PRIVATE
     NODE_EDITOR_EXPORTS
     #NODE_DEBUG_DRAWING
+    QT_NO_KEYWORDS
 )
 
 target_compile_options(nodes
   PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4127 /EHsc>
     $<$<CXX_COMPILER_ID:GNU>:-Wall -Wextra>
-    $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra>
 )
+if(NOT "${CMAKE_CXX_SIMULATE_ID}" STREQUAL "MSVC")
+  # Clang-Cl on MSVC identifies as "Clang" but behaves more like MSVC:
+  target_compile_options(nodes
+    PRIVATE
+      $<$<CXX_COMPILER_ID:Clang>:-Wall -Wextra>
+  )
+endif()
 
-target_compile_features(nodes
-  PUBLIC
-    cxx_generic_lambdas # Require C++14
-)
+if(NE_DEVELOPER_DEFAULTS)
+  target_compile_features(nodes PUBLIC cxx_std_14)
+  set_target_properties(nodes PROPERTIES CXX_EXTENSIONS OFF)
+endif()
 
 set_target_properties(nodes
   PROPERTIES
@@ -107,7 +155,7 @@ set_target_properties(nodes
 
 file(GLOB_RECURSE HEADERS_TO_MOC include/nodes/internal/*.hpp)
 
-qt5_wrap_cpp(nodes_moc
+qt_wrap_cpp(nodes_moc
     ${HEADERS_TO_MOC}
   TARGET nodes
   OPTIONS --no-notes # Don't display a note for the headers which don't produce a moc_*.cpp

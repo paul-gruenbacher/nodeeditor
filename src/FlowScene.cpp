@@ -13,8 +13,8 @@
 #include <QtCore/QJsonDocument>
 #include <QtCore/QJsonObject>
 #include <QtCore/QJsonArray>
-
-#include <QDebug>
+#include <QtCore/QtGlobal>
+#include <QtCore/QDebug>
 
 #include "Node.hpp"
 #include "NodeGraphicsObject.hpp"
@@ -45,6 +45,11 @@ FlowScene(std::shared_ptr<DataModelRegistry> registry,
   , _registry(std::move(registry))
 {
   setItemIndexMethod(QGraphicsScene::NoIndex);
+
+  // This connection should come first
+  connect(this, &FlowScene::connectionCreated, this, &FlowScene::setupConnectionSignals);
+  connect(this, &FlowScene::connectionCreated, this, &FlowScene::sendConnectionCreatedToNodes);
+  connect(this, &FlowScene::connectionDeleted, this, &FlowScene::sendConnectionDeletedToNodes);
 }
 
 FlowScene::
@@ -78,7 +83,16 @@ createConnection(PortType connectedPort,
 
   _connections[connection->id()] = connection;
 
-  connectionCreated(*connection);
+  // Note: this connection isn't truly created yet. It's only partially created.
+  // Thus, don't send the connectionCreated(...) signal.
+
+  connect(connection.get(),
+          &Connection::connectionCompleted,
+          this,
+          [this](Connection const& c) {
+            connectionCreated(c);
+          });
+
   return connection;
 }
 
@@ -159,17 +173,23 @@ restoreConnection(QJsonObject const &connectionJson)
                      *nodeOut, portIndexOut,
                      getConverter());
 
+  // Note: the connectionCreated(...) signal has already been sent
+  // by createConnection(...)
+
   return connection;
 }
 
 
 void
 FlowScene::
-deleteConnection(Connection& connection)
+deleteConnection(Connection const& connection)
 {
-  connectionDeleted(connection);
-  connection.removeFromNodes();
-  _connections.erase(connection.id());
+  auto it = _connections.find(connection.id());
+  if (it != _connections.end())
+  {
+    connection.removeFromNodes();
+    _connections.erase(it);
+  }
 }
 
 
@@ -211,6 +231,7 @@ restoreNode(QJsonObject const& nodeJson)
   auto nodePtr = node.get();
   _nodes[node->id()] = std::move(node);
 
+  nodePlaced(*nodePtr);
   nodeCreated(*nodePtr);
   return *nodePtr;
 }
@@ -317,7 +338,7 @@ iterateOverNodeDataDependentOrder(std::function<void(NodeDataModel*)> const & vi
     {
       for (size_t i = 0; i < model.nPorts(PortType::In); ++i)
       {
-        auto connections = node.nodeState().connections(PortType::In, i);
+        auto connections = node.nodeState().connections(PortType::In, static_cast<PortIndex>(i));
 
         for (auto& conn : connections)
         {
@@ -395,6 +416,21 @@ connections() const
 
 std::vector<Node*>
 FlowScene::
+allNodes() const
+{
+  std::vector<Node*> nodes;
+
+  std::transform(_nodes.begin(),
+                 _nodes.end(),
+                 std::back_inserter(nodes),
+                 [](std::pair<QUuid const, std::unique_ptr<Node>> const & p) { return p.second.get(); });
+
+  return nodes;
+}
+
+
+std::vector<Node*>
+FlowScene::
 selectedNodes() const
 {
   QList<QGraphicsItem*> graphicsItems = selectedItems();
@@ -465,10 +501,6 @@ void
 FlowScene::
 load()
 {
-  clearScene();
-
-  //-------------
-
   QString fileName =
     QFileDialog::getOpenFileName(nullptr,
                                  tr("Open Flow Scene"),
@@ -482,6 +514,8 @@ load()
 
   if (!file.open(QIODevice::ReadOnly))
     return;
+
+  clearScene();
 
   QByteArray wholeFile = file.readAll();
 
@@ -544,6 +578,48 @@ loadFromMemory(const QByteArray& data)
   {
     restoreConnection(connection.toObject());
   }
+}
+
+
+void
+FlowScene::
+setupConnectionSignals(Connection const& c)
+{
+  connect(&c,
+          &Connection::connectionMadeIncomplete,
+          this,
+          &FlowScene::connectionDeleted,
+          Qt::UniqueConnection);
+}
+
+
+void
+FlowScene::
+sendConnectionCreatedToNodes(Connection const& c)
+{
+  Node* from = c.getNode(PortType::Out);
+  Node* to   = c.getNode(PortType::In);
+
+  Q_ASSERT(from != nullptr);
+  Q_ASSERT(to != nullptr);
+
+  from->nodeDataModel()->outputConnectionCreated(c);
+  to->nodeDataModel()->inputConnectionCreated(c);
+}
+
+
+void
+FlowScene::
+sendConnectionDeletedToNodes(Connection const& c)
+{
+  Node* from = c.getNode(PortType::Out);
+  Node* to   = c.getNode(PortType::In);
+
+  Q_ASSERT(from != nullptr);
+  Q_ASSERT(to != nullptr);
+
+  from->nodeDataModel()->outputConnectionDeleted(c);
+  to->nodeDataModel()->inputConnectionDeleted(c);
 }
 
 
