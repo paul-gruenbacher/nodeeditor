@@ -37,63 +37,71 @@ add_subdirectory(external)
 
 
 # Find the QtWidgets library
-find_package(Qt6
-  COMPONENTS
-   Core
-   Widgets
-   Gui
-   OpenGL
-)
+# find_package(Qt6
+#   COMPONENTS
+#    Core
+#    Widgets
+#    Gui
+#    OpenGL
+# )
 
-if (NOT Qt6_FOUND)
-  find_package(Qt5 5.13
-    COMPONENTS
-     Core
-     Widgets
-     Gui
-     OpenGL
-  )
-endif()
+# if (NOT Qt6_FOUND)
+  # find_package(Qt5 5.12
+  #   COMPONENTS
+  #    Core
+  #    Widgets
+  #    Gui
+  #    OpenGL
+  #    REQUIRED
+  # )
+# endif()
 
 if (NOT (Qt6_FOUND OR Qt5_FOUND))
   message(FATAL_ERRROR "Qt libraries were not found.")
 endif()
 
 
-qt_add_resources(RESOURCES ./resources/resources.qrc)
+qt5_add_resources(RESOURCES ./resources/resources.qrc)
 
 # Unfortunately, as we have a split include/src, AUTOMOC doesn't work.
 # We'll have to manually specify some files
 set(CMAKE_AUTOMOC ON)
 
-set(CPP_SOURCE_FILES
-  src/Connection.cpp
-  src/ConnectionBlurEffect.cpp
-  src/ConnectionGeometry.cpp
-  src/ConnectionGraphicsObject.cpp
-  src/ConnectionPainter.cpp
-  src/ConnectionState.cpp
-  src/ConnectionStyle.cpp
-  src/DataModelRegistry.cpp
-  src/FlowScene.cpp
-  src/FlowView.cpp
-  src/FlowViewStyle.cpp
-  src/Node.cpp
-  src/NodeConnectionInteraction.cpp
-  src/NodeDataModel.cpp
-  src/NodeGeometry.cpp
-  src/NodeGraphicsObject.cpp
-  src/NodePainter.cpp
-  src/NodeState.cpp
-  src/NodeStyle.cpp
-  src/Properties.cpp
-  src/StyleCollection.cpp
-)
+file(GLOB_RECURSE CPP_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
+file(GLOB_RECURSE HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/nodes/internal/*.hpp)
+
+# qt5_wrap_cpp(qan_source_files, qan_header_files)
+
+# set(CPP_SOURCE_FILES
+#   src/Connection.cpp
+#   src/ConnectionBlurEffect.cpp
+#   src/ConnectionGeometry.cpp
+#   src/ConnectionGraphicsObject.cpp
+#   src/ConnectionPainter.cpp
+#   src/ConnectionState.cpp
+#   src/ConnectionStyle.cpp
+#   src/DataModelRegistry.cpp
+#   src/FlowScene.cpp
+#   src/FlowView.cpp
+#   src/FlowViewStyle.cpp
+#   src/Node.cpp
+#   src/NodeConnectionInteraction.cpp
+#   src/NodeDataModel.cpp
+#   src/NodeGeometry.cpp
+#   src/NodeGraphicsObject.cpp
+#   src/NodePainter.cpp
+#   src/NodeState.cpp
+#   src/NodeStyle.cpp
+#   src/Properties.cpp
+#   src/StyleCollection.cpp
+# )
 
 # If we want to give the option to build a static library,
 # set BUILD_SHARED_LIBS option to OFF
 add_library(nodes
+  STATIC
   ${CPP_SOURCE_FILES}
+  ${HEADER_FILES}
   ${RESOURCES}
 )
 add_library(NodeEditor::nodes ALIAS nodes)
@@ -109,17 +117,18 @@ target_include_directories(nodes
 
 target_link_libraries(nodes
   PUBLIC
-    Qt::Core
-    Qt::Widgets
-    Qt::Gui
-    Qt::OpenGL
+    Qt5::Core
+    Qt5::Widgets
+    Qt5::Gui
+    Qt5::OpenGL
 )
 
 target_compile_definitions(nodes
   PUBLIC
-    NODE_EDITOR_SHARED
+  NODE_EDITOR_STATIC
+    # NODE_EDITOR_SHARED
   PRIVATE
-    NODE_EDITOR_EXPORTS
+    # NODE_EDITOR_EXPORTS
     #NODE_DEBUG_DRAWING
     QT_NO_KEYWORDS
 )
