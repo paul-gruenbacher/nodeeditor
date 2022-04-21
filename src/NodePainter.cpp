@@ -40,9 +40,9 @@ paint(QPainter* painter,
 
   drawNodeRect(painter, geom, model, graphicsObject);
 
-  drawConnectionPoints(painter, geom, state, model, scene);
+  //drawConnectionPoints(painter, geom, state, model, scene);
 
-  drawFilledConnectionPoints(painter, geom, state, model);
+  //drawFilledConnectionPoints(painter, geom, state, model);
 
   drawModelName(painter, geom, state, model);
 
@@ -100,7 +100,17 @@ drawNodeRect(QPainter* painter,
 
   double const radius = 3.0;
 
-  painter->drawRoundedRect(boundary, radius, radius);
+  if(model->nodeType() == NT_WSR) {
+      painter->drawRoundedRect(boundary, radius, radius);
+  }
+  else if(model->nodeType() == NT_PFR) {
+      painter->setBrush(Qt::darkCyan);
+      painter->drawRoundedRect(boundary, radius, radius);
+  }
+  else {
+      painter->setBrush(Qt::yellow);
+      painter->drawEllipse(boundary);
+  }
 }
 
 
@@ -262,7 +272,14 @@ drawModelName(QPainter * painter,
 
   painter->setFont(f);
   painter->setPen(nodeStyle.FontColor);
-  painter->drawText(position, name);
+  if(model->nodeType() != NT_EXT_INLET) {
+      painter->drawText(position, name);
+  }
+  else {
+      QPointF position2(geom.width() / 2.0 - 50, geom.height() / 2.0);
+      painter->drawText(position2, name);
+  }
+
 
   f.setBold(false);
   painter->setFont(f);

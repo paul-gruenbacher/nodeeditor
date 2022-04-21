@@ -102,6 +102,8 @@ public:
 
 Q_SIGNALS:
 
+  void nodePlacedNow(QtNodes::Node&n);
+
   /**
    * @brief Node has been created but not on the scene yet.
    * @see nodePlaced()
@@ -122,7 +124,7 @@ Q_SIGNALS:
 
   void nodeMoved(Node& n, const QPointF& newLocation);
 
-  void nodeDoubleClicked(Node& n);
+  void nodeDoubleClicked(QtNodes::Node& n);
 
   void nodeClicked(Node& n);
 
@@ -131,6 +133,8 @@ Q_SIGNALS:
   void nodeHovered(Node& n, QPoint screenPos);
 
   void connectionHoverLeft(Connection& c);
+
+  void connectionDoubleClicked(QtNodes::Connection& c);
 
   void nodeHoverLeft(Node& n);
 

@@ -27,6 +27,10 @@ public:
 
   void setScene(FlowScene *scene);
 
+  void setBackgroundColor(QColor color) {_backgroundColor = color; }
+
+  QPointF _clickPos;
+
 public Q_SLOTS:
 
   void scaleUp();
@@ -62,8 +66,7 @@ private:
   QAction* _clearSelectionAction;
   QAction* _deleteSelectionAction;
 
-  QPointF _clickPos;
-
   FlowScene* _scene;
+  QColor _backgroundColor;
 };
 }

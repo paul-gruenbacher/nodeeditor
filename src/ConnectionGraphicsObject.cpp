@@ -244,6 +244,13 @@ hoverLeaveEvent(QGraphicsSceneHoverEvent* event)
   event->accept();
 }
 
+void
+ConnectionGraphicsObject::
+mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+    QGraphicsItem::mouseDoubleClickEvent(event);
+    _scene.connectionDoubleClicked(connection());
+}
 
 void
 ConnectionGraphicsObject::

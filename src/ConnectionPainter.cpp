@@ -307,7 +307,10 @@ paint(QPainter* painter,
 
   painter->setPen(connectionStyle.constructionColor());
   painter->setBrush(connectionStyle.constructionColor());
-  double const pointRadius = pointDiameter / 2.0;
-  painter->drawEllipse(source, pointRadius, pointRadius);
-  painter->drawEllipse(sink, pointRadius, pointRadius);
+  QLineF arrow1(sink.x(), sink.y(), sink.x()-15, sink.y()-10);
+  QLineF arrow2(sink.x(), sink.y(), sink.x()-15, sink.y()+10);
+  painter->setPen(QPen(Qt::white, 4));
+  painter->drawLine(arrow1);
+  painter->drawLine(arrow2);
+
 }

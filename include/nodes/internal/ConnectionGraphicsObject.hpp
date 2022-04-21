@@ -75,6 +75,9 @@ protected:
   void
   hoverLeaveEvent(QGraphicsSceneHoverEvent* event) override;
 
+  void
+  mouseDoubleClickEvent(QGraphicsSceneMouseEvent* event);
+
 private:
 
   void

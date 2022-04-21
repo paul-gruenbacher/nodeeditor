@@ -50,6 +50,8 @@ FlowView(QWidget *parent)
   setCacheMode(QGraphicsView::CacheBackground);
 
   //setViewport(new QGLWidget(QGLFormat(QGL::SampleBuffers)));
+
+  _backgroundColor = QColor::black();
 }
 
 
@@ -173,6 +175,7 @@ contextMenuEvent(QContextMenuEvent *event)
       node.nodeGraphicsObject().setPos(posView);
 
       _scene->nodePlaced(node);
+      _scene->nodePlacedNow(node);
     }
     else
     {
@@ -345,6 +348,7 @@ void
 FlowView::
 drawBackground(QPainter* painter, const QRectF& r)
 {
+    painter->setBrush(_backgroundColor);
   QGraphicsView::drawBackground(painter, r);
 
   auto drawGrid =
