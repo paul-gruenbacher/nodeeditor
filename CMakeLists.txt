@@ -65,7 +65,7 @@ qt5_add_resources(RESOURCES ./resources/resources.qrc)
 
 # Unfortunately, as we have a split include/src, AUTOMOC doesn't work.
 # We'll have to manually specify some files
-set(CMAKE_AUTOMOC ON)
+# set(CMAKE_AUTOMOC ON)
 
 file(GLOB_RECURSE CPP_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB_RECURSE HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/nodes/internal/*.hpp)
