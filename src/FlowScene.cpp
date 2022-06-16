@@ -91,6 +91,7 @@ createConnection(PortType connectedPort,
           this,
           [this](Connection const& c) {
             connectionCreated(c);
+            connectionDrawn(c);
           });
 
   return connection;

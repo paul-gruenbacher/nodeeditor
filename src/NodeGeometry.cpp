@@ -281,9 +281,9 @@ captionHeight() const
   if (!_dataModel->captionVisible())
     return 0;
 
-  QString name = _dataModel->caption();
+  //QString name = _dataModel->caption();
 
-  return _boldFontMetrics.boundingRect(name).height();
+  return 20;//_boldFontMetrics.boundingRect(name).height();
 }
 
 
@@ -294,9 +294,9 @@ captionWidth() const
   if (!_dataModel->captionVisible())
     return 0;
 
-  QString name = _dataModel->caption();
+  //QString name = _dataModel->caption();
 
-  return _boldFontMetrics.boundingRect(name).width();
+  return 175;//_boldFontMetrics.boundingRect(name).width();
 }
 
 

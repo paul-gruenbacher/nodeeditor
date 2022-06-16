@@ -96,20 +96,21 @@ drawNodeRect(QPainter* painter,
 
   float diam = nodeStyle.ConnectionPointDiameter;
 
-  QRectF boundary( -diam, -diam, 2.0 * diam + geom.width(), 2.0 * diam + geom.height());
+  QRect boundary( -diam, -diam, geom.width(), geom.height());
 
   double const radius = 3.0;
 
   if(model->nodeType() == NT_WSR) {
-      painter->drawRoundedRect(boundary, radius, radius);
+      QPixmap wsrNode(":/images/plugFlowReactor.png");
+      painter->drawPixmap(boundary, wsrNode);
   }
   else if(model->nodeType() == NT_PFR) {
-      painter->setBrush(Qt::darkCyan);
-      painter->drawRoundedRect(boundary, radius, radius);
+      QPixmap pfrNode(":/images/7_general-flow-a.svg");
+      painter->drawPixmap(boundary, pfrNode);
   }
   else {
-      painter->setBrush(Qt::yellow);
-      painter->drawEllipse(boundary);
+      QPixmap inletNode(":/images/2_gas-turbines-d.svg");
+      painter->drawPixmap(boundary, inletNode);
   }
 }
 
@@ -272,11 +273,17 @@ drawModelName(QPainter * painter,
 
   painter->setFont(f);
   painter->setPen(nodeStyle.FontColor);
-  if(model->nodeType() != NT_EXT_INLET) {
+  if(model->nodeType() == NT_PFR) {
       painter->drawText(position, name);
   }
+  else if(model->nodeType() == NT_WSR) {
+      QPointF position2((geom.width() - rect.width()) / 2.0,
+                       ((geom.spacing() + geom.entryHeight()) / 3.0) - 30);
+      painter->drawText(position2, name);
+  }
   else {
-      QPointF position2(geom.width() / 2.0 - 50, geom.height() / 2.0);
+      QPointF position2((geom.width() - rect.width()) / 2.0,
+                       ((geom.spacing() + geom.entryHeight()) / 3.0) - 20);
       painter->drawText(position2, name);
   }
 

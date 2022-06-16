@@ -117,7 +117,7 @@ drawSketchLine(QPainter * painter,
     p.setColor(connectionStyle.constructionColor());
     p.setStyle(Qt::DashLine);
 
-    painter->setPen(p);
+    painter->setPen(Qt::black);
     painter->setBrush(Qt::NoBrush);
 
     using QtNodes::ConnectionGeometry;
@@ -271,7 +271,7 @@ drawNormalLine(QPainter * painter,
       p.setColor(selectedColor);
     }
 
-    painter->setPen(p);
+    painter->setPen(Qt::black);
     painter->setBrush(Qt::NoBrush);
 
     painter->drawPath(cubic);
@@ -284,6 +284,9 @@ ConnectionPainter::
 paint(QPainter* painter,
       Connection const &connection)
 {
+  painter->setPen(Qt::black);
+  painter->setBrush(Qt::black);
+
   drawHoveredOrSelected(painter, connection);
 
   drawSketchLine(painter, connection);
@@ -304,12 +307,12 @@ paint(QPainter* painter,
     QtNodes::StyleCollection::connectionStyle();
 
   double const pointDiameter = connectionStyle.pointDiameter();
-
-  painter->setPen(connectionStyle.constructionColor());
-  painter->setBrush(connectionStyle.constructionColor());
+  painter->setBrush(Qt::black);
+  //painter->setPen(connectionStyle.constructionColor());
+  //painter->setBrush(connectionStyle.constructionColor());
   QLineF arrow1(sink.x(), sink.y(), sink.x()-15, sink.y()-10);
   QLineF arrow2(sink.x(), sink.y(), sink.x()-15, sink.y()+10);
-  painter->setPen(QPen(Qt::white, 4));
+  painter->setPen(QPen(Qt::black, 4));
   painter->drawLine(arrow1);
   painter->drawLine(arrow2);
 
